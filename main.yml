@@ -1,0 +1,14 @@
+---
+- name: Add ELK repo
+  become: true
+  become_user: root
+  hosts: all
+  tasks:
+    - name: add kibana GPG key
+      apt_key:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        state: present
+    - name: add prereq
+      package: name=apt-transport-https state=latest
+    - name: Add repo
+      apt_repository: repo="deb https://artifacts.elastic.co/packages/6.x/apt stable main" 
