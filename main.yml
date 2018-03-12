@@ -11,4 +11,7 @@
     - name: add prereq
       package: name=apt-transport-https state=latest
     - name: Add repo
-      apt_repository: repo="deb https://artifacts.elastic.co/packages/6.x/apt stable main" 
+      apt_repository:
+        repo: deb https://artifacts.elastic.co/packages/6.x/apt stable main 
+        update_cache: yes
+        state: present
