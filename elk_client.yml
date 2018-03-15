@@ -1,0 +1,42 @@
+---
+- name: install logstash client
+  become: true
+  become_user: root
+  hosts: clients, 
+  vars:
+    master_name: master.garaged.org
+  tasks:
+    - name: actually install stuff
+      package: 
+        name:
+          - filebeat
+          - metricbeat
+        state: latest
+    - name: enable services
+      service: name={{ item }} enabled=yes state=started
+      with_items:
+        - filebeat
+        - metricbeat
+    - name: create cert dir
+      file:
+        path: /etc/pki/tls/certs
+        state: directory
+        mode: 0755
+    - name: set s ssl cert
+      template:
+        src: templates/logstash-forwarder.crt
+        dest: /etc/pki/tls/certs/logstash-forwarder.crt
+        owner: root
+        mode: 0600
+    - name: fix filebeat.yml
+      template:
+        src: templates/filebeat.j2
+        dest: /etc/filebeat/filebeat.yml
+        owner: root
+        mode: 0600
+    - name: fix metricbeat.yml
+      template:
+        src: templates/metricbeat.j2
+        dest: /etc/filebeat/metricbeat.yml
+        owner: root
+        mode: 0600
