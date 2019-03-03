@@ -1,0 +1,6 @@
+---
+- name: Converge
+  hosts: all
+  remote_user: vagrant
+  roles:
+    - role: elastic_stack

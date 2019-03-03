@@ -1,0 +1,13 @@
+---
+- name: Start Role
+  debug:
+    msg: "Stating Role... "
+  changed_when: false
+
+- import_tasks: repository.yml
+
+- import_tasks: elk_server.yml
+  when: inventory_hostname in groups['servers']
+
+- import_tasks: elk_client.yml
+  when: inventory_hostname in groups['clients']

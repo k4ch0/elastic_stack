@@ -1,0 +1,125 @@
+---
+# - name: install kibana/logstash into the server
+  # become: true
+  # become_user: root
+  # hosts: master, 
+  # vars:
+  #   master_name: master.garaged.org
+  # tasks:
+
+# - name: add "{{ extra_path }}" to path
+#   lineinfile:
+#     path: ~/.profile
+#     state: present
+#     backrefs: yes
+#     #regexp: 'PATH=(["]*)((?!.*?{{extra_path}}).*?)(["]*)$'
+#     regexp: '^mesg '
+#     insertafter: '^mesg '
+#     line: PATH=\1\2:{{extra_path}}\3"
+# #   copy:
+# #       dest: /etc/profile.d/custom-path.sh
+# #       content: 'PATH=$PATH:{{ extra_path }}'
+
+- name: install java
+  apt:
+    name:
+      - openjdk-8-jre
+    state: latest
+
+- name: Update system openjdk Java version
+  alternatives:
+    name: java
+    path: "{{ java_path }}"
+
+
+- name: actually install stuff
+  apt: 
+    name:
+      - kibana
+      - logstash
+      - nginx
+      - apache2-utils
+      - elasticsearch
+    state: latest
+  # environment:
+  #   PATH:/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/:$PATH
+
+
+- name: enable services
+  service: 
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop:
+    - elasticsearch
+    - logstash
+    - kibana
+    - nginx
+
+- name: Create Cert Folders
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: true
+  loop:
+    - /etc/pki/tls/cert/
+    - /etc/pki/tls/private/
+
+
+- name: copy cert
+  copy:
+    src: files/logstash-forwarder.crt
+    dest: /etc/pki/tls/cert/logstash-forwarder.crt
+    owner: root
+    group: logstash
+    mode: 0640
+
+- name: copy key
+  copy:
+    src: files/logstash-forwarder.key
+    dest: /etc/pki/tls/private/logstash-forwarder.key
+    owner: root
+    group: logstash
+    mode: 0644
+
+- name: fix elasticsearch.yml
+  template:
+    src: templates/elasticsearch.yml
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: root
+    mode: 0660
+
+- name: nginx config
+  template:
+    src: templates/nginx.default.j2
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    mode: 0660
+
+- name: logstash 02-beats-input.conf
+  template:
+    src: templates/logstash/02-beats-input.conf
+    dest: /etc/logstash/conf.d/02-beats-input.conf
+    owner: logstash
+    mode: 0660
+
+- name: logstash 10-syslog-filter.conf
+  template:
+    src: templates/logstash/10-syslog-filter.conf
+    dest: /etc/logstash/conf.d/10-syslog-filter.conf
+    owner: logstash
+    mode: 0660
+
+- name: logstash 30-elasticsearch-output.conf
+  template:
+    src: templates/logstash/30-elasticsearch-output.conf
+    dest: /etc/logstash/conf.d/30-elasticsearch-output.conf
+    owner: logstash
+    mode: 0660
+
+- name: nginx passwd file
+  template:
+    src: templates/htpasswd.users
+    dest: /etc/nginx/htpasswd.users
+    owner: www-data
+    mode: 0660

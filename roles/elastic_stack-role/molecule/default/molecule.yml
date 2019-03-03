@@ -1,0 +1,52 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint:
+  name: yamllint
+platforms:
+  - name: xenial
+#    hostname: instance-xenial
+    image: ubuntu:16.04
+    # command: "/usb/sbin/init"
+    # privileged: true
+    #  - name: bionic
+    #   hostname: instance-bionic
+    #image: ubuntu:18.04
+provisioner:
+  name: ansible
+  log: true
+  options:
+    vvv: false
+  config_options:
+    defaults:
+      retry_files_enabled: false
+      stdout_callback: yaml
+      # squash_actions: 'apk,apt,dnf,package,pacman,pkgng,yum,zypper'
+  lint:
+    name: ansible-lint
+scenario:
+  name: default
+  test_sequence:
+    - lint
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - destroy
+verifier:
+  name: testinfra
+  options:
+    cache-clear: true
+    vvv: false
+    verbose: false
+    verbosity: 7
+    sudo: true
+  lint:
+    name: flake8

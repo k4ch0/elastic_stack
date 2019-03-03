@@ -1,0 +1,28 @@
+---
+#
+- name: add prereq
+  apt:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - apt-transport-https
+    - apt-utils
+    - libterm-ui-perl
+    - dialog
+
+- name: add kibana GPG key
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add repo
+  apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/6.x/apt stable main
+    state: present
+
+- name: update repos
+  apt:
+    update_cache: true
+    upgrade: true
+    cache_valid_time: 300
+    force_apt_get: true

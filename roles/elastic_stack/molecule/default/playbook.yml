@@ -1,0 +1,10 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+    - role: elastic_stack
+
+  post_tasks:
+    - name: Check if Kibana is running.
+      uri:
+        url: "http://xenial-server:80/"

@@ -1,0 +1,73 @@
+---
+- name: install kibana/logstash into the server
+  become: true
+  become_user: root
+  hosts: master, 
+  vars:
+    master_name: master.garaged.org
+  tasks:
+    - name: actually install stuff
+      package: 
+        name:
+          - openjdk-8-jre
+          - kibana
+          - logstash
+          - elasticsearch
+          - nginx
+          - apache2-utils
+        state: latest
+    - name: enable services
+      service: name={{ item }} enabled=yes state=started
+      with_items:
+        - elasticsearch
+        - logstash
+        - kibana
+        - nginx
+    - name: check for cert
+      file:
+        path: /etc/pki/tls/cert/logstash-forwarder.crt
+        owner: root
+        group: logstash
+        mode: 0640
+    - name: check for key
+      file:
+        path: /etc/pki/tls/private/logstash-forwarder.key
+        owner: root
+        group: logstash
+        mode: 0644
+    - name: fix elasticsearch.yml
+      template:
+        src: templates/elasticsearch.yml
+        dest: /etc/elasticsearch/elasticsearch.yml
+        owner: root
+        mode: 0660
+    - name: nginx config
+      template:
+        src: templates/nginx.default.j2
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        mode: 0660
+    - name: logstash 02-beats-input.conf
+      template:
+        src: templates/logstash/02-beats-input.conf
+        dest: /etc/logstash/conf.d/02-beats-input.conf
+        owner: logstash
+        mode: 0660
+    - name: logstash 10-syslog-filter.conf
+      template:
+        src: templates/logstash/10-syslog-filter.conf
+        dest: /etc/logstash/conf.d/10-syslog-filter.conf
+        owner: logstash
+        mode: 0660
+    - name: logstash 30-elasticsearch-output.conf
+      template:
+        src: templates/logstash/30-elasticsearch-output.conf
+        dest: /etc/logstash/conf.d/30-elasticsearch-output.conf
+        owner: logstash
+        mode: 0660
+    - name: nginx passwd file
+      template:
+        src: templates/htpasswd.users
+        dest: /etc/nginx/htpasswd.users
+        owner: www-data
+        mode: 0660

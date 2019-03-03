@@ -1,0 +1,69 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint:
+  name: yamllint
+
+platforms:
+  - name: xenial-server
+    image: solita/ubuntu-systemd:16.04
+    command: "/sbin/init"
+    privileged: true
+    groups:
+      - servers
+      - clients
+    networks:
+      - name: molecule
+        aliases:
+          - xenial-server
+          - master.garaged.org
+
+  - name: xenial-client
+    image: solita/ubuntu-systemd:16.04
+    command: "/sbin/init"
+    privileged: true
+    groups:
+      - clients
+    networks:
+      - name: molecule
+        aliases:
+
+provisioner:
+  name: ansible
+  log: true
+  options:
+    vvv: true
+  config_options:
+    defaults:
+      retry_files_enabled: false
+      stdout_callback: yaml
+      # squash_actions: 'apk,apt,dnf,package,pacman,pkgng,yum,zypper'
+  lint:
+    name: ansible-lint
+
+scenario:
+  name: default
+  test_sequence:
+    - lint
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - destroy
+verifier:
+  name: testinfra
+  options:
+    cache-clear: true
+    vvv: false
+    verbose: false
+    verbosity: 7
+    sudo: true
+  lint:
+    name: flake8

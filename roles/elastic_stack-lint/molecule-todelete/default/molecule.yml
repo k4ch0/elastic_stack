@@ -1,0 +1,73 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint:
+  name: yamllint
+platforms:
+  - name: xenial-server
+    hostname: xenial-server
+    image: solita/ubuntu-systemd:16.04
+    command: "/usb/sbin/init"
+    privileged: true
+    # volume_mounts:
+    #   - "/sys/fs/cgroup:/sys/fs/cgroup:rw"
+    # environment:
+    #   container: docker
+    groups:
+      - servers
+  - name: xenial-client
+    hostname: xenial-client
+    image: solita/ubuntu-systemd:16.04
+    command: "/usb/sbin/init"
+    privileged: true
+    # volume_mounts:
+    #   - "/sys/fs/cgroup:/sys/fs/cgroup:rw"
+    # environment:
+    #   container: docker
+    groups:
+      - clients
+    #  - name: bionic
+    #   hostname: instance-bionic
+    #image: ubuntu:18.04
+
+
+
+
+provisioner:
+  name: ansible
+  log: true
+  options:
+    vvv: true
+  config_options:
+    defaults:
+      retry_files_enabled: false
+      stdout_callback: yaml
+      # squash_actions: 'apk,apt,dnf,package,pacman,pkgng,yum,zypper'
+  lint:
+    name: ansible-lint
+scenario:
+  name: default
+  test_sequence:
+    - lint
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - destroy
+verifier:
+  name: testinfra
+  options:
+    cache-clear: true
+    vvv: false
+    verbose: false
+    verbosity: 7
+    sudo: true
+  lint:
+    name: flake8
